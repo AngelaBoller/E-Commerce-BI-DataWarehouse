@@ -1,2 +1,2 @@
-# Pharma-Retail-BI-DataWarehouse
-End-to-End Pharma &amp; OTC Retail Analytics Platform using SQL Server and Power BI
+# E-Commerce-BI-DataWarehouse
+End-to-End E-Commerce Analytics Platform using SQL Server and Power BI
