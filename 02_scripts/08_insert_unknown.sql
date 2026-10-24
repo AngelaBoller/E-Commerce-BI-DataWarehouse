@@ -1,25 +1,40 @@
+
+-- =========================================================
+-- E-Commerce Data Warehouse
+-- Script: 08_insert_unknown.sql
+-- Purpose: Insert unknown dimension members safely
+-- =========================================================
+
 USE ECommerceDW;
+GO
 
-
--- =========================================================
+-- ---------------------------------------------------------
 -- UNKNOWN CUSTOMER
--- =========================================================
+-- ---------------------------------------------------------
 
-INSERT INTO dwh.DimCustomer
-(
-    CustomerKey,
-    CustomerID,
-    Name,
-    Country,
-    Segment,
-    RegistrationDate
+IF NOT EXISTS (
+    SELECT 1
+    FROM dwh.DimCustomer
+    WHERE CustomerKey = -1
 )
-VALUES
-(
-    -1,
-    'UNKNOWN',
-    'Unknown Customer',
-    'Unknown',
-    'Unknown',
-    NULL
-);
+BEGIN
+    INSERT INTO dwh.DimCustomer
+    (
+        CustomerKey,
+        CustomerID,
+        Name,
+        Country,
+        Segment,
+        RegistrationDate
+    )
+    VALUES
+    (
+        -1,
+        'UNKNOWN',
+        'Unknown Customer',
+        'Unknown',
+        'Unknown',
+        NULL
+    );
+END;
+GO
