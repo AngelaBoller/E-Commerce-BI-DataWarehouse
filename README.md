@@ -1,78 +1,115 @@
-# E-Commerce Analytics & Data Warehouse Platform
-
-> **Project Status:** 🛠️ In Development  
-> **Architecture:** Python (ETL) ➔ SQL Server (Staging & Galaxy Schema DWH) ➔ Power BI
-
----
+# E-Commerce Analytics & Data Warehouse
 
 ## 1. Project Overview
 
 ### Purpose
-The purpose of this project is to design and implement an end-to-end data platform for an e-commerce business. The platform integrates transactional data from different operational processes, transforms it into an analytical Data Warehouse using a **Galaxy Schema**, and provides reliable data for business reporting and executive decision-making.
 
-This is a self-initiated portfolio project demonstrating practical skills in:
-* **SQL** & **Data Warehousing** (Dimensional Modeling, Galaxy Schema / Fact Constellation)
-* **Python** (Data Generation, Data Quality Checks & ETL Pipelines)
-* **Data Quality & Governance** (Validation Rules & Anomaly Detection)
-* **Power BI** (Data Modeling, DAX & Executive Dashboards)
-* **Business Requirements Analysis** (Translating business questions into analytical models)
+The purpose of this project is to design and implement an end-to-end data analytics platform for a fictional e-commerce business. The project covers data generation, data quality processing, dimensional data modelling, SQL Server implementation, and interactive reporting in Power BI.
 
----
+The data warehouse follows a **Galaxy Schema (Fact Constellation)**, separating sales, payment, and shipment processes into distinct fact tables while using shared dimensions where appropriate.
+
+This self-initiated portfolio project demonstrates practical skills in:
+
+- **SQL & Data Warehousing** — dimensional modelling and Galaxy Schema design
+- **Python** — synthetic data generation, data processing, and data quality checks
+- **Data Quality & Validation** — validation rules, anomaly handling, and integrity checks
+- **Power BI** — data modelling, KPI reporting, and interactive dashboards
+- **Business Analysis** — translating business questions into analytical requirements
 
 ## 2. Business Scenario
-A fictional international e-commerce company sells consumer products globally. Operational processes generate data across different lifecycles—sales orders, payment processing, and fulfillment/shipments. 
 
-Management lacks a unified analytical view, and mixing these distinct operational events into a single flat model leads to data duplication and grain conflicts. The goal is to establish a central Data Warehouse that models each process at its correct granularity while enabling cross-process analytics.
+A fictional international e-commerce company sells consumer products across multiple markets and sales channels. Its operational processes generate data related to customer orders, payments, and shipments.
 
----
+Analysing these processes in a single flat data model can lead to duplicated records and incorrect aggregations because each process operates at a different level of detail.
+
+The goal of this project is to create a structured analytical data warehouse that preserves the granularity of each business process and supports consistent reporting across sales, payments, shipments, customers, and products.
 
 ## 3. Business Objectives
-* **Process Isolation & Granularity:** Model Sales, Payments, and Shipments independently to prevent grain mismatch.
-* **Unified Cross-Process View:** Leverage Conformed Dimensions to allow seamless drill-downs across processes.
-* **Trend & Sales Analysis:** Track revenue, order volumes, and profitability over time.
-* **Product & Category Insights:** Identify top-performing products, subcategories, and profit drivers.
-* **Logistics & Payment Performance:** Monitor delivery durations, carrier efficiency, and payment processing statuses.
-* **Customer Understanding:** Analyze buying behavior, segment performance, and retention.
-* **Data Quality & Trust:** Implement strict data quality checks before reporting.
 
----
+- **Process Separation:** Model sales, payments, and shipments at their respective levels of detail.
+- **Consistent Analysis:** Use shared dimensions where appropriate to support cross-process reporting.
+- **Sales Performance:** Analyse revenue, order volumes, and sales trends over time.
+- **Product Analysis:** Compare product and category performance.
+- **Payment Analysis:** Examine payment amounts, methods, and statuses.
+- **Logistics Analysis:** Explore shipment volumes and delivery duration.
+- **Customer Analysis:** Investigate customer and segment-level sales patterns.
+- **Data Quality:** Apply validation rules and checks before using the data for reporting.
 
 ## 4. Key Business Questions
 
-| Category | Questions |
-| :--- | :--- |
-| **Sales** | How much revenue did we generate? How do sales develop over time? What is the Average Order Value (AOV)? |
-| **Products** | Which products generate the most revenue? Which categories have the highest profit margins? |
-| **Payments** | What percentage of orders are paid vs. pending? Which payment methods are preferred per country? |
-| **Shipments** | What is the average delivery time per carrier? Are there regional shipping bottlenecks? |
-| **Customers** | How many active customers exist? What is the revenue split across customer segments? |
-| **Geography & Channels** | Which countries generate the highest revenue? How do sales compare between Online Shop, App, and Marketplaces? |
+| Area | Business Questions |
+|---|---|
+| Sales | How does revenue develop over time? Which periods generate the highest sales? |
+| Products | Which products and categories contribute most to revenue? |
+| Payments | How are payment amounts and payment statuses distributed? |
+| Shipments | What are the observed delivery durations? |
+| Customers | How does revenue vary across customer segments and countries? |
+| Sales Channels | How does sales performance differ across available channels? |
+| Data Quality | Which data quality issues occur, and how are they handled? |
 
----
+These questions provide the analytical direction for the project. The extent to which each question is currently answered depends on the implemented SQL queries and Power BI measures.
 
-## 5. Key Business KPIs
+## 5. Key Performance Indicators (KPIs)
 
-* **Total Revenue:** $\sum (\text{Line Sales Revenue})$
-* **Total Orders:** Count of unique orders (`COUNT(DISTINCT OrderID)`)
-* **Average Order Value (AOV):** $\frac{\text{Total Revenue}}{\text{Total Orders}}$
-* **Gross Profit & Margin:** $\text{Revenue} - \text{Product Cost}$ and $\frac{\text{Gross Profit}}{\text{Revenue}}$
-* **Payment Settlement Rate:** $\frac{\text{Successful Payments}}{\text{Total Payment Transactions}}$
-* **On-Time Delivery Rate:** $\frac{\text{Shipments Delivered On Time}}{\text{Total Shipments}}$
-* **YoY Revenue Growth:** Year-over-Year comparison of sales performance
+The project dashboard includes KPI cards for the following measures:
 
----
+- **Total Revenue** — total sales revenue represented in the sales data.
+- **Total Orders** — number of distinct orders.
+- **Total Customers** — number of customers represented in the data.
+- **Units Sold** — total quantity of products sold.
+- **Payment Amount** — total amount recorded in the payment data.
+- **Average Delivery Duration** — average delivery time based on the available shipment data.
 
-## 6. Data Warehouse Architecture: Galaxy Schema (Fact Constellation)
+Additional KPIs, such as Average Order Value (AOV), payment settlement rate, on-time delivery rate, gross profit margin, and year-over-year revenue growth, may be added if the required measures and data are implemented and validated.
 
-Because **Sales**, **Payments**, and **Shipments** occur at different operational stages, have distinct business keys, and operate at different grains, forcing them into a single star schema would cause severe 1:n join fan-outs and duplication errors. 
+## 6. Data Warehouse Architecture: Galaxy Schema
 
-The architecture utilizes a **Galaxy Schema** centered around **Conformed Dimensions**:
+The data warehouse separates three business processes into independent fact tables:
 
-```text
-               [Dim_Customer]        [Dim_Date]        [Dim_Channel]
-                     \                   |                   /
-                      +------------------+------------------+
-                      |                  |                  |
-               [Fact_Sales]       [Fact_Payment]     [Fact_Shipment]
-                      |                  |                  |
-               [Dim_Product]    [Dim_PaymentMethod]   [Dim_Carrier]
+- `FactSales` — one record per order line.
+- `FactPayment` — one record per payment transaction.
+- `FactShipment` — one record per shipment record.
+
+The model includes the following dimensions:
+
+- `DimCustomer` — customer attributes.
+- `DimProduct` — product attributes.
+- `DimDate` — date attributes for time-based analysis.
+- `DimOrder` — order-related attributes.
+
+The fact tables preserve their individual granularity. Shared dimensions support analysis across business processes where the corresponding relationships exist.
+
+This design reduces the risk of double-counting that can occur when fact tables with different levels of detail are joined directly.
+
+## 7. Data Quality & Validation
+
+Data quality is an important part of the project workflow.
+
+The project uses synthetic source data containing deliberately introduced data quality issues. Python-based processing addresses identified issues, while SQL scripts support technical validation of the data warehouse.
+
+Validation includes checks such as:
+
+- Expected row counts
+- Duplicate key detection
+- Unknown dimension members
+- Key and referential integrity checks
+
+These checks help assess whether the processed data is suitable for analytical reporting.
+
+## 8. Tools & Technologies
+
+- Python
+- SQL Server
+- SQL
+- Power BI
+- CSV data exchange
+
+## 9. Future Development
+
+The project is designed as a foundation for further development. Planned enhancements include integrating data from additional sources, expanding the data ingestion workflow, introducing further data quality rules, and extending the analytical capabilities of the Power BI dashboard.
+
+The long-term goal is to develop the project into a more comprehensive analytics solution covering the workflow from data ingestion and data quality assurance to data warehousing, reporting, and business insights.
+
+## 10. Disclaimer
+
+This project uses synthetic e-commerce data for educational and portfolio purposes. It does not represent actual company transactions or real customer records.
