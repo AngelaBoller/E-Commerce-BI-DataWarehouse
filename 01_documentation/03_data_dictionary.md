@@ -1,96 +1,182 @@
-
 # 03. Data Dictionary
 
-## 1. Conformed Dimensions
+## 1. Overview
 
-### `Dim_Customer`
-* **Source:** `stg.Customers`
-* **Grain:** One row per customer.
+This document describes the structure of the SQL Server e-commerce data warehouse implemented in the `dwh` schema.
 
-| Column Name | Data Type | Key Type | Nullable | Description |
-| :--- | :--- | :--- | :--- | :--- |
-| `CustomerSK` | `INT` | Primary Key (Surrogate) | No | Auto-incremented surrogate key. |
-| `CustomerID` | `VARCHAR(20)` | Business Key | No | Unique business identifier for customer. |
-| `CustomerName` | `VARCHAR(100)` | Attribute | Yes | Full name of the customer. |
-| `Country` | `VARCHAR(50)` | Attribute | No | Residence country (CH, DE, AT, FR, IT). |
-| `Segment` | `VARCHAR(20)` | Attribute | No | Market segment (`Standard`, `Premium`, `VIP`). |
-| `RegistrationDate` | `DATE` | Attribute | No | Date when customer account was created. |
+The data warehouse consists of four dimension tables and three fact tables:
 
-### `Dim_Product`
-* **Source:** `stg.Products`
-* **Grain:** One row per product.
+**Dimension tables**
+- `DimCustomer`
+- `DimProduct`
+- `DimDate`
+- `DimOrder`
 
-| Column Name | Data Type | Key Type | Nullable | Description |
-| :--- | :--- | :--- | :--- | :--- |
-| `ProductSK` | `INT` | Primary Key (Surrogate) | No | Auto-incremented surrogate key. |
-| `ProductID` | `VARCHAR(20)` | Business Key | No | Unique business SKU code. |
-| `ProductName` | `VARCHAR(100)` | Attribute | No | Commercial name of the item. |
-| `Category` | `VARCHAR(50)` | Attribute | No | High-level product category. |
-| `Subcategory` | `VARCHAR(50)` | Attribute | No | Specific product sub-classification. |
-| `Brand` | `VARCHAR(50)` | Attribute | Yes | Brand manufacturer name. |
-| `UnitCost` | `DECIMAL(10,2)` | Attribute | No | Base cost price per unit. |
-| `ListPrice` | `DECIMAL(10,2)` | Attribute | No | Base selling price per unit. |
+**Fact tables**
+- `FactSales`
+- `FactPayment`
+- `FactShipment`
 
-### `Dim_Date`
-* **Source:** Generated Calendar Dimension
-* **Grain:** One row per calendar day (2024–2026).
+The definitions below reflect the column names, SQL Server data types, nullability, and primary-key information retrieved from the database.
 
-| Column Name | Data Type | Key Type | Nullable | Description |
-| :--- | :--- | :--- | :--- | :--- |
-| `DateSK` | `INT` | Primary Key | No | Format `YYYYMMDD`. |
-| `FullDate` | `DATE` | Attribute | No | Calendar date. |
-| `Year` | `INT` | Attribute | No | Calendar year (e.g., 2025). |
-| `Quarter` | `VARCHAR(2)` | Attribute | No | Quarter representation (Q1-Q4). |
-| `Month` | `INT` | Attribute | No | Month number (1-12). |
-| `MonthName` | `VARCHAR(20)` | Attribute | No | Full month name (e.g., January). |
-| `DayOfWeek` | `VARCHAR(20)` | Attribute | No | Day name (e.g., Monday). |
+## 2. Dimension Tables
 
----
+### 2.1 DimCustomer
 
-## 2. Fact Tables
+**Purpose:** Stores customer attributes for customer, country, and segment analysis.
 
-### `Fact_Sales`
-* **Grain:** One row per **Order Line Item**.
+**Grain:** One row per customer.
 
-| Column Name | Data Type | Key Type | Nullable | Description |
-| :--- | :--- | :--- | :--- | :--- |
-| `SalesFactID` | `BIGINT` | Primary Key | No | Auto-incremented surrogate key. |
-| `OrderLineID` | `VARCHAR(30)` | Business Key | No | Unique identifier for order line item. |
-| `OrderID` | `VARCHAR(20)` | Attribute / Degenerate | No | Parent order reference number. |
-| `DateSK` | `INT` | Foreign Key | No | FK to `Dim_Date`. |
-| `CustomerSK` | `INT` | Foreign Key | No | FK to `Dim_Customer`. |
-| `ProductSK` | `INT` | Foreign Key | No | FK to `Dim_Product`. |
-| `Channel` | `VARCHAR(30)` | Attribute | No | Sales channel (`Webshop`, `App`, `Marketplace`). |
-| `Quantity` | `INT` | Measure | No | Units purchased. |
-| `UnitPrice` | `DECIMAL(10,2)` | Measure | No | Effective unit selling price. |
-| `Discount` | `DECIMAL(10,2)` | Measure | No | Discount value applied. |
-| `LineNetAmount` | `DECIMAL(10,2)` | Measure | No | Total line net revenue: `(Qty * Price) - Discount`. |
+| Column | Data Type | Key / Role | Nullable | Description |
+|---|---|---|---|---|
+| `CustomerKey` | `INT` | Primary Key | No | Customer surrogate key. |
+| `CustomerID` | `VARCHAR(20)` | Business Identifier | No | Customer identifier from the source data. |
+| `Name` | `VARCHAR(200)` | Attribute | Yes | Customer name. |
+| `Country` | `VARCHAR(100)` | Attribute | Yes | Customer country. |
+| `Segment` | `VARCHAR(50)` | Attribute | Yes | Customer segment. |
+| `RegistrationDate` | `DATE` | Attribute | Yes | Date the customer registered. |
 
-### `Fact_Payment`
-* **Grain:** One row per **Payment Transaction**.
+### 2.2 DimProduct
 
-| Column Name | Data Type | Key Type | Nullable | Description |
-| :--- | :--- | :--- | :--- | :--- |
-| `PaymentFactID` | `BIGINT` | Primary Key | No | Auto-incremented surrogate key. |
-| `PaymentID` | `VARCHAR(20)` | Business Key | No | Transaction reference identifier. |
-| `OrderID` | `VARCHAR(20)` | Attribute / Degenerate | No | Associated parent order. |
-| `DateSK` | `INT` | Foreign Key | No | FK to `Dim_Date` (Payment Date). |
-| `CustomerSK` | `INT` | Foreign Key | No | FK to `Dim_Customer`. |
-| `PaymentMethod` | `VARCHAR(30)` | Attribute | No | Method used (`CreditCard`, `PayPal`, `Invoice`, etc.). |
-| `PaymentStatus` | `VARCHAR(20)` | Attribute | No | Status (`Completed`, `Failed`, `Pending`). |
-| `PaymentAmount` | `DECIMAL(10,2)` | Measure | No | Settled payment transaction amount. |
+**Purpose:** Stores descriptive product attributes and product cost and pricing information.
 
-### `Fact_Shipment`
-* **Grain:** One row per **Shipment Package Event**.
+**Grain:** One row per product.
 
-| Column Name | Data Type | Key Type | Nullable | Description |
-| :--- | :--- | :--- | :--- | :--- |
-| `ShipmentFactID` | `BIGINT` | Primary Key | No | Auto-incremented surrogate key. |
-| `ShipmentID` | `VARCHAR(20)` | Business Key | No | Package tracking reference number. |
-| `OrderID` | `VARCHAR(20)` | Attribute / Degenerate | No | Associated parent order. |
-| `ShipmentDateSK` | `INT` | Foreign Key | No | FK to `Dim_Date` (Dispatch Date). |
-| `DeliveryDateSK` | `INT` | Foreign Key | Yes | FK to `Dim_Date` (Actual Delivery Date). |
-| `CustomerSK` | `INT` | Foreign Key | No | FK to `Dim_Customer`. |
-| `Carrier` | `VARCHAR(50)` | Attribute | No | Shipping carrier name (`DHL`, `SwissPost`, etc.). |
-| `ShipmentStatus` | `VARCHAR(20)` | Attribute | No | Delivery status (`Delivered`, `In Transit`, `Returned`). |
-| `ShippingCost` | `DECIMAL(10,2)` | Measure | No | Carrier charge amount. |
+| Column | Data Type | Key / Role | Nullable | Description |
+|---|---|---|---|---|
+| `ProductKey` | `INT` | Primary Key | No | Product surrogate key. |
+| `ProductID` | `VARCHAR(20)` | Business Identifier | No | Product identifier from the source data. |
+| `ProductName` | `VARCHAR(200)` | Attribute | Yes | Product name. |
+| `Category` | `VARCHAR(100)` | Attribute | Yes | Product category. |
+| `Subcategory` | `VARCHAR(100)` | Attribute | Yes | Product subcategory. |
+| `Brand` | `VARCHAR(100)` | Attribute | Yes | Product brand. |
+| `UnitCost` | `DECIMAL(18,2)` | Attribute | Yes | Cost per product unit. |
+| `ListPrice` | `DECIMAL(18,2)` | Attribute | Yes | Listed selling price per product unit. |
+
+### 2.3 DimDate
+
+**Purpose:** Provides calendar attributes for time-based reporting.
+
+**Grain:** One row per calendar date.
+
+The dimension contains 5,844 rows covering 1 January 2020 through 31 December 2035.
+
+| Column | Data Type | Key / Role | Nullable | Description |
+|---|---|---|---|---|
+| `DateKey` | `INT` | Primary Key | No | Date key used for date-based analysis. |
+| `Date` | `DATE` | Date Attribute | No | Full calendar date. |
+| `Year` | `INT` | Attribute | No | Calendar year. |
+| `Quarter` | `INT` | Attribute | No | Calendar quarter. |
+| `Month` | `INT` | Attribute | No | Month number. |
+| `MonthName` | `VARCHAR(20)` | Attribute | No | Month name. |
+| `Week` | `INT` | Attribute | No | Week number. |
+| `Day` | `INT` | Attribute | No | Day of the month. |
+| `DayOfWeek` | `INT` | Attribute | No | Numeric day-of-week value. |
+| `DayName` | `VARCHAR(20)` | Attribute | No | Name of the day. |
+| `IsWeekend` | `BIT` | Attribute | No | Indicates whether the date is classified as a weekend. |
+
+### 2.4 DimOrder
+
+**Purpose:** Stores order-level attributes for order analysis and filtering.
+
+**Grain:** One row per order.
+
+| Column | Data Type | Key / Role | Nullable | Description |
+|---|---|---|---|---|
+| `OrderKey` | `INT` | Primary Key | No | Order surrogate key. |
+| `OrderID` | `VARCHAR(20)` | Business Identifier | No | Order identifier from the source data. |
+| `CustomerKey` | `INT` | Attribute / Relationship Key | No | Customer key associated with the order. |
+| `OrderDateKey` | `INT` | Attribute / Date Key | Yes | Date key associated with the order date. |
+| `OrderDate` | `DATE` | Attribute | Yes | Order creation date. |
+| `Channel` | `VARCHAR(50)` | Attribute | Yes | Sales channel associated with the order. |
+| `OrderStatus` | `VARCHAR(50)` | Attribute | Yes | Order status. |
+
+## 3. Fact Tables
+
+### 3.1 FactSales
+
+**Purpose:** Stores sales measures at order-line level.
+
+**Grain:** One row per order line.
+
+| Column | Data Type | Key / Role | Nullable | Description |
+|---|---|---|---|---|
+| `OrderItemID` | `VARCHAR(20)` | Primary Key | No | Identifier for the order line item. |
+| `OrderKey` | `INT` | Relationship Key | No | Key identifying the associated order. |
+| `CustomerKey` | `INT` | Relationship Key | No | Key identifying the associated customer. |
+| `ProductKey` | `INT` | Relationship Key | No | Key identifying the associated product. |
+| `OrderDateKey` | `INT` | Date Key | Yes | Date key associated with the order date. |
+| `Quantity` | `INT` | Measure | No | Quantity of products purchased. |
+| `UnitPrice` | `DECIMAL(18,2)` | Measure | No | Unit selling price recorded for the order line. |
+| `Discount` | `DECIMAL(18,2)` | Measure | Yes | Discount amount recorded for the order line. |
+| `SalesAmount` | `DECIMAL(18,2)` | Measure | Yes | Sales amount recorded for the order line. |
+
+### 3.2 FactPayment
+
+**Purpose:** Stores payment transactions associated with orders and customers.
+
+**Grain:** One row per payment transaction.
+
+| Column | Data Type | Key / Role | Nullable | Description |
+|---|---|---|---|---|
+| `PaymentID` | `VARCHAR(20)` | Primary Key | No | Payment transaction identifier. |
+| `OrderKey` | `INT` | Relationship Key | No | Key identifying the associated order. |
+| `CustomerKey` | `INT` | Relationship Key | No | Key identifying the associated customer. |
+| `PaymentDateKey` | `INT` | Date Key | Yes | Date key associated with the payment date. |
+| `PaymentMethod` | `VARCHAR(50)` | Attribute | Yes | Payment method used. |
+| `PaymentStatus` | `VARCHAR(50)` | Attribute | Yes | Payment transaction status. |
+| `PaymentAmount` | `DECIMAL(18,2)` | Measure | Yes | Payment amount recorded for the transaction. |
+
+### 3.3 FactShipment
+
+**Purpose:** Stores shipment information for delivery and logistics analysis.
+
+**Grain:** One row per shipment record.
+
+| Column | Data Type | Key / Role | Nullable | Description |
+|---|---|---|---|---|
+| `ShipmentID` | `VARCHAR(20)` | Primary Key | No | Shipment identifier. |
+| `OrderKey` | `INT` | Relationship Key | No | Key identifying the associated order. |
+| `CustomerKey` | `INT` | Relationship Key | No | Key identifying the associated customer. |
+| `ShipmentDateKey` | `INT` | Date Key | Yes | Date key associated with the shipment date. |
+| `DeliveryDateKey` | `INT` | Date Key | Yes | Date key associated with the delivery date. |
+| `ShippingCountry` | `VARCHAR(100)` | Attribute | Yes | Shipping destination country. |
+| `ShippingStatus` | `VARCHAR(50)` | Attribute | Yes | Shipment or delivery status. |
+| `DeliveryDurationDays` | `INT` | Measure | Yes | Recorded delivery duration in days. |
+
+## 4. Keys and Relationships
+
+The database metadata identifies the following primary keys:
+
+- `DimCustomer.CustomerKey`
+- `DimProduct.ProductKey`
+- `DimDate.DateKey`
+- `DimOrder.OrderKey`
+- `FactSales.OrderItemID`
+- `FactPayment.PaymentID`
+- `FactShipment.ShipmentID`
+
+Several fact-table columns are intended to associate transactions with dimensions, orders, and dates. The column metadata query used for this document did not return foreign-key constraints.
+
+Consequently, the intended analytical relationships should be verified against the actual Power BI model and SQL Server relationship definitions before being documented as enforced foreign keys.
+
+## 5. Data Types and Nullability
+
+The warehouse uses the following main SQL Server data types:
+
+- `INT` for surrogate keys, calendar attributes, and quantities.
+- `VARCHAR` for business identifiers and descriptive attributes.
+- `DATE` for calendar and business dates.
+- `DECIMAL(18,2)` for monetary values.
+- `BIT` for the weekend indicator.
+
+A column marked as nullable can contain SQL `NULL` values. This describes the database schema and does not necessarily mean that NULL values are present in the current data.
+
+## 6. Notes and Limitations
+
+- Column definitions and key information are based on the SQL Server metadata retrieved from the `dwh` schema.
+- Descriptions explain the apparent business purpose of the columns; they do not replace validation of the underlying calculation logic.
+- The exact formulas used to calculate `SalesAmount` and `PaymentAmount` should be confirmed in the corresponding loading scripts.
+- Foreign-key relationships and referential integrity should be documented separately after verification.
+- Additional KPIs and analytical capabilities are described in `01_business_requirements`.
+
