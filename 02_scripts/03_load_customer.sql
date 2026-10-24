@@ -1,3 +1,4 @@
+
 -- =========================================================
 -- E-Commerce Data Warehouse
 -- Script: 03_load_staging.sql
@@ -17,7 +18,7 @@ GO
 -- ---------------------------------------------------------
 
 BULK INSERT stg.Customers
-FROM '...'
+FROM 'C:\Users\DFS_S\ProjektDataWarehouse\CSV_Dateien_Dirty\ecommerce_dirty_test_data(3)\customers.csv'
 WITH
 (
     FORMAT = 'CSV',
