@@ -1,139 +1,160 @@
 # E-Commerce Analytics & Data Warehouse
 
+An end-to-end data analytics portfolio project demonstrating data quality processing, dimensional data modelling, SQL Server data warehousing, and interactive Power BI reporting for a fictional e-commerce business.
+
+## Dashboard Preview
+
+<!-- Replace the image path below with the exact screenshot filename in your repository. -->
+
+![Power BI E-Commerce Dashboard](./03_powerbi/ScreenshotDashboardGit.png)
+
 ## 1. Project Overview
 
-### Purpose
+This self-initiated project builds an analytical data warehouse for a fictional international e-commerce company. It covers synthetic data generation, data quality processing, SQL Server implementation, technical validation, and Power BI reporting.
 
-The purpose of this project is to design and implement an end-to-end data analytics platform for a fictional e-commerce business. The project covers data generation, data quality processing, dimensional data modelling, SQL Server implementation, and interactive reporting in Power BI.
+The warehouse follows a **Galaxy Schema (Fact Constellation)**, separating sales, payment, and shipment processes into distinct fact tables while sharing dimensions where appropriate.
 
-The data warehouse follows a **Galaxy Schema (Fact Constellation)**, separating sales, payment, and shipment processes into distinct fact tables while using shared dimensions where appropriate.
+### Skills Demonstrated
 
-This self-initiated portfolio project demonstrates practical skills in:
-
-- **SQL & Data Warehousing** — dimensional modelling and Galaxy Schema design
-- **Python** — synthetic data generation, data processing, and data quality checks
-- **Data Quality & Validation** — validation rules, anomaly handling, and integrity checks
-- **Power BI** — data modelling, KPI reporting, and interactive dashboards
-- **Business Analysis** — translating business questions into analytical requirements
+- **SQL & Data Warehousing:** dimensional modelling, SQL Server, fact and dimension tables
+- **Python:** synthetic data generation and data processing
+- **Data Quality:** data quality rules, unknown dimension members, and technical validation
+- **Power BI:** KPI reporting, data modelling, and interactive dashboards
+- **Business Analysis:** translating business questions into analytical requirements
 
 ## 2. Business Scenario
 
-A fictional international e-commerce company sells consumer products across multiple markets and sales channels. Its operational processes generate data related to customer orders, payments, and shipments.
+The fictional company sells consumer products across multiple countries and sales channels. Its operations generate customer, order, sales, payment, and shipment data.
 
-Analysing these processes in a single flat data model can lead to duplicated records and incorrect aggregations because each process operates at a different level of detail.
+Combining these processes without respecting their different levels of detail can cause duplicated records and incorrect aggregations. The project therefore separates each process into its own fact table and uses shared dimensions to support consistent analysis.
 
-The goal of this project is to create a structured analytical data warehouse that preserves the granularity of each business process and supports consistent reporting across sales, payments, shipments, customers, and products.
+## 3. Business Questions
 
-## 3. Business Objectives
+The project is designed to explore questions such as:
 
-- **Process Separation:** Model sales, payments, and shipments at their respective levels of detail.
-- **Consistent Analysis:** Use shared dimensions where appropriate to support cross-process reporting.
-- **Sales Performance:** Analyse revenue, order volumes, and sales trends over time.
-- **Product Analysis:** Compare product and category performance.
-- **Payment Analysis:** Examine payment amounts, methods, and statuses.
-- **Logistics Analysis:** Explore shipment volumes and delivery duration.
-- **Customer Analysis:** Investigate customer and segment-level sales patterns.
-- **Data Quality:** Apply validation rules and checks before using the data for reporting.
+- How does sales revenue change over time?
+- Which products and categories contribute most to revenue?
+- How do sales vary by country, customer segment, and channel?
+- How are payment amounts, methods, and statuses distributed?
+- What delivery durations are observed in the shipment data?
+- How are data quality issues identified and handled?
 
-## 4. Key Business Questions
+The extent to which each question is answered depends on the implemented measures and report visuals.
 
-| Area | Business Questions |
-|---|---|
-| Sales | How does revenue develop over time? Which periods generate the highest sales? |
-| Products | Which products and categories contribute most to revenue? |
-| Payments | How are payment amounts and payment statuses distributed? |
-| Shipments | What are the observed delivery durations? |
-| Customers | How does revenue vary across customer segments and countries? |
-| Sales Channels | How does sales performance differ across available channels? |
-| Data Quality | Which data quality issues occur, and how are they handled? |
+## 4. Data Warehouse Architecture
 
-These questions provide the analytical direction for the project. The extent to which each question is currently answered depends on the implemented SQL queries and Power BI measures.
-
-## 5. Key Performance Indicators (KPIs)
-
-The project dashboard includes KPI cards for the following measures:
-
-- **Total Revenue** — total sales revenue represented in the sales data.
-- **Total Orders** — number of distinct orders.
-- **Total Customers** — number of customers represented in the data.
-- **Units Sold** — total quantity of products sold.
-- **Payment Amount** — total amount recorded in the payment data.
-- **Average Delivery Duration** — average delivery time based on the available shipment data.
-
-Additional KPIs, such as Average Order Value (AOV), payment settlement rate, on-time delivery rate, gross profit margin, and year-over-year revenue growth, may be added if the required measures and data are implemented and validated.
-
-## 6. Data Warehouse Architecture
-
-The data warehouse follows a Galaxy Schema design with three fact tables and four shared dimension tables.
-```mermaid
-flowchart TB
-    DC[DimCustomer]
-    DP[DimProduct]
-    DD[DimDate]
-    DO[DimOrder]
-
-    FS[FactSales]
-    FP[FactPayment]
-    FSH[FactShipment]
-
-    DC --> FS
-    DP --> FS
-    DD --> FS
-    DO --> FS
-
-    DC --> FP
-    DD --> FP
-    DO --> FP
-
-    DC --> FSH
-    DD --> FSH
-    DO --> FSH
-```
+The warehouse contains three fact tables and four dimension tables.
 
 ### Fact Tables
 
-- **FactSales:** Sales transactions at order-line level.
-- **FactPayment:** Payment transactions at payment level.
-- **FactShipment:** Shipment records at shipment level.
+| Table | Grain |
+|---|---|
+| `FactSales` | One row per order line |
+| `FactPayment` | One row per payment transaction |
+| `FactShipment` | One row per shipment record |
 
 ### Dimension Tables
 
-- **DimCustomer:** Customer-related attributes.
-- **DimProduct:** Product-related attributes.
-- **DimDate:** Date attributes for time-based analysis.
-- **DimOrder:** Order-related attributes.
+| Table | Purpose |
+|---|---|
+| `DimCustomer` | Customer attributes |
+| `DimProduct` | Product attributes |
+| `DimDate` | Calendar attributes for time-based analysis |
+| `DimOrder` | Order attributes |
 
-This structure supports the analysis of sales, payments, and shipments at their respective levels of detail.
+### Logical Model
+
+```text
+DimCustomer ──┬── FactSales ──── DimProduct
+              ├── FactPayment
+              └── FactShipment
+
+DimOrder ────── FactSales
+           ├─── FactPayment
+           └─── FactShipment
+
+DimDate ─────── FactSales
+           ├─── FactPayment
+           └─── FactShipment
+```
+
+This diagram illustrates the intended logical relationships. It does not imply that physical foreign-key constraints are defined in SQL Server.
+
+## 5. Project Results
+
+The following row counts were observed during database validation.
+
+| Table | Observed Rows |
+|---|---:|
+| `DimCustomer` | 10,001 |
+| `DimProduct` | 501 |
+| `DimDate` | 5,844 |
+| `DimOrder` | 100,000 |
+| `FactSales` | 299,131 |
+| `FactPayment` | 100,000 |
+| `FactShipment` | 94,974 |
+
+The date dimension covers **1 January 2020 through 31 December 2035**.
+
+These figures describe the observed warehouse contents. They do not, by themselves, establish that every data quality check passed.
+
+## 6. Power BI Dashboard
+
+The dashboard includes KPI cards for:
+
+- **Total Revenue**
+- **Total Orders**
+- **Total Customers**
+- **Units Sold**
+- **Payment Amount**
+- **Average Delivery Duration**
+
+The report also includes analysis of revenue by month, product category, sales channel, and product, with filters for dimensions such as year, month, country, customer segment, channel, and category.
+
+Additional metrics, including Average Order Value, settlement rate, on-time delivery rate, gross profit margin, and year-over-year revenue growth, are potential future enhancements unless explicitly implemented and validated.
 
 ## 7. Data Quality & Validation
 
-Data quality is an important part of the project workflow.
+The project uses synthetic source data with deliberately introduced data quality issues.
 
-The project uses synthetic source data containing deliberately introduced data quality issues. Python-based processing addresses identified issues, while SQL scripts support technical validation of the data warehouse.
+Python-based processing addresses identified issues, and SQL validation scripts check the warehouse structure and data.
 
-Validation includes checks such as:
+Validation includes:
 
 - Expected row counts
-- Duplicate key detection
+- Duplicate business keys and fact-grain duplicates
 - Unknown dimension members
-- Key and referential integrity checks
+- Fact-to-dimension key relationships
+- Date-key validity
+- Negative or otherwise suspicious measure values
+- Selected intentional data quality cases
 
-These checks help assess whether the processed data is suitable for analytical reporting.
+The validation scripts report results for review; successful execution of a script does not necessarily mean every individual check passed.
 
-## 8. Tools & Technologies
+## 8. Repository Guide
+
+Explore the project using the following sections:
+
+- [Business Requirements & Documentation](./01_documentation/01_business_requirements/)
+- [SQL Scripts](./02_scripts/)
+- [Power BI Reports & Dashboards](./03_Power_BI_Reports_Dashboards/)
+
+The documentation covers business requirements, data architecture and dimensional modelling, the data dictionary, and the ETL and data quality framework.
+
+## 9. Tools & Technologies
 
 - Python
 - SQL Server
 - SQL
 - Power BI
-- CSV data exchange
+- CSV
 
-## 9. Future Development
+## 10. Limitations & Future Development
 
-The project is designed as a foundation for further development. Planned enhancements include integrating data from additional sources, expanding the data ingestion workflow, introducing further data quality rules, and extending the analytical capabilities of the Power BI dashboard.
+This project is a portfolio demonstration using synthetic data. Its results should not be interpreted as real business performance.
 
-The long-term goal is to develop the project into a more comprehensive analytics solution covering the workflow from data ingestion and data quality assurance to data warehousing, reporting, and business insights.
+Potential future improvements include expanding data ingestion, adding further data quality rules, implementing additional validated KPIs, and extending the reporting capabilities.
 
-## 10. Disclaimer
+## 11. Disclaimer
 
-This project uses synthetic e-commerce data for educational and portfolio purposes. It does not represent actual company transactions or real customer records.
+All data used in this project is synthetic and intended for educational and portfolio purposes. It does not represent actual company transactions or real customer records.
