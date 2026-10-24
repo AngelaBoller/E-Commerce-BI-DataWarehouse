@@ -62,24 +62,48 @@ The project dashboard includes KPI cards for the following measures:
 
 Additional KPIs, such as Average Order Value (AOV), payment settlement rate, on-time delivery rate, gross profit margin, and year-over-year revenue growth, may be added if the required measures and data are implemented and validated.
 
-## 6. Data Warehouse Architecture: Galaxy Schema
+## 6. Data Warehouse Architecture
 
-The data warehouse separates three business processes into independent fact tables:
+The data warehouse follows a Galaxy Schema design with three fact tables and four shared dimension tables.
+```mermaid
+flowchart TB
+    DC[DimCustomer]
+    DP[DimProduct]
+    DD[DimDate]
+    DO[DimOrder]
 
-- `FactSales` — one record per order line.
-- `FactPayment` — one record per payment transaction.
-- `FactShipment` — one record per shipment record.
+    FS[FactSales]
+    FP[FactPayment]
+    FSH[FactShipment]
 
-The model includes the following dimensions:
+    DC --> FS
+    DP --> FS
+    DD --> FS
+    DO --> FS
 
-- `DimCustomer` — customer attributes.
-- `DimProduct` — product attributes.
-- `DimDate` — date attributes for time-based analysis.
-- `DimOrder` — order-related attributes.
+    DC --> FP
+    DD --> FP
+    DO --> FP
 
-The fact tables preserve their individual granularity. Shared dimensions support analysis across business processes where the corresponding relationships exist.
+    DC --> FSH
+    DD --> FSH
+    DO --> FSH
+```
 
-This design reduces the risk of double-counting that can occur when fact tables with different levels of detail are joined directly.
+### Fact Tables
+
+- **FactSales:** Sales transactions at order-line level.
+- **FactPayment:** Payment transactions at payment level.
+- **FactShipment:** Shipment records at shipment level.
+
+### Dimension Tables
+
+- **DimCustomer:** Customer-related attributes.
+- **DimProduct:** Product-related attributes.
+- **DimDate:** Date attributes for time-based analysis.
+- **DimOrder:** Order-related attributes.
+
+This structure supports the analysis of sales, payments, and shipments at their respective levels of detail.
 
 ## 7. Data Quality & Validation
 
