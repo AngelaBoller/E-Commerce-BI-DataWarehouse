@@ -1,79 +1,105 @@
 
-USE ECommerceDW;
-
 -- =========================================================
--- 12_dimension_date.sql
--- Create and populate Date Dimension (max und Min order- , shipment and paymentdate checked (Start 01.01.2024 and 31.12.2035 End + 9 Years)
+-- E-Commerce Data Warehouse
+-- Script: 12_dimension_date.sql
+-- Purpose: Create and populate the Date Dimension
+--
+-- Date range: 2020-01-01 to 2035-12-31
+-- Total expected rows: 5,844
+--
+-- The range supports analysis of historical and future
+-- order, shipment, and payment dates.
+-- =========================================================
 
+USE ECommerceDW;
+GO
 
-CREATE TABLE dwh.DimDate
-(
-    DateKey      INT          NOT NULL,
-    [Date]       DATE         NOT NULL,
-    [Year]       INT          NOT NULL,
-    [Quarter]    INT          NOT NULL,
-    [Month]      INT          NOT NULL,
-    MonthName    VARCHAR(20)  NOT NULL,
-    [Week]       INT          NOT NULL,
-    [Day]        INT          NOT NULL,
-    DayOfWeek    INT          NOT NULL,
-    DayName      VARCHAR(20)  NOT NULL,
-    IsWeekend    BIT          NOT NULL,
+-- ---------------------------------------------------------
+-- Create and populate DimDate only if it does not exist
+-- ---------------------------------------------------------
 
-    CONSTRAINT PK_DimDate
-        PRIMARY KEY (DateKey),
+IF OBJECT_ID('dwh.DimDate', 'U') IS NULL
+BEGIN
 
-    CONSTRAINT UQ_DimDate_Date
-        UNIQUE ([Date])
-);
+    CREATE TABLE dwh.DimDate
+    (
+        DateKey      INT          NOT NULL,
+        [Date]       DATE         NOT NULL,
+        [Year]       INT          NOT NULL,
+        [Quarter]    INT          NOT NULL,
+        [Month]      INT          NOT NULL,
+        MonthName    VARCHAR(20)  NOT NULL,
+        [Week]       INT          NOT NULL,
+        [Day]        INT          NOT NULL,
+        DayOfWeek    INT          NOT NULL,
+        DayName      VARCHAR(20)  NOT NULL,
+        IsWeekend    BIT          NOT NULL,
 
-;WITH DateSeries AS
-(
-    SELECT CAST('2020-01-01' AS DATE) AS DateValue
+        CONSTRAINT PK_DimDate
+            PRIMARY KEY (DateKey),
 
-    UNION ALL
+        CONSTRAINT UQ_DimDate_Date
+            UNIQUE ([Date])
+    );
 
-    SELECT DATEADD(DAY, 1, DateValue)
+    ;WITH DateSeries AS
+    (
+        SELECT CAST('2020-01-01' AS DATE) AS DateValue
+
+        UNION ALL
+
+        SELECT DATEADD(DAY, 1, DateValue)
+        FROM DateSeries
+        WHERE DateValue < '2035-12-31'
+    )
+    INSERT INTO dwh.DimDate
+    (
+        DateKey,
+        [Date],
+        [Year],
+        [Quarter],
+        [Month],
+        MonthName,
+        [Week],
+        [Day],
+        DayOfWeek,
+        DayName,
+        IsWeekend
+    )
+    SELECT
+        CONVERT(INT, CONVERT(CHAR(8), DateValue, 112)),
+        DateValue,
+        YEAR(DateValue),
+        DATEPART(QUARTER, DateValue),
+        MONTH(DateValue),
+        DATENAME(MONTH, DateValue),
+        DATEPART(ISO_WEEK, DateValue),
+        DAY(DateValue),
+
+        ((DATEPART(WEEKDAY, DateValue) + @@DATEFIRST - 2) % 7) + 1,
+
+        DATENAME(WEEKDAY, DateValue),
+
+        CASE
+            WHEN ((DATEPART(WEEKDAY, DateValue) + @@DATEFIRST - 2) % 7) + 1
+                 IN (6, 7)
+            THEN 1
+            ELSE 0
+        END
+
     FROM DateSeries
-    WHERE DateValue < '2035-12-31'
-)
-INSERT INTO dwh.DimDate
-(
-    DateKey,
-    [Date],
-    [Year],
-    [Quarter],
-    [Month],
-    MonthName,
-    [Week],
-    [Day],
-    DayOfWeek,
-    DayName,
-    IsWeekend
-)
+    OPTION (MAXRECURSION 0);
+
+END;
+GO
+
+-- ---------------------------------------------------------
+-- Validate the Date Dimension
+-- ---------------------------------------------------------
+
 SELECT
-    CONVERT(INT, CONVERT(CHAR(8), DateValue, 112)) AS DateKey,
-    DateValue,
-    YEAR(DateValue),
-    DATEPART(QUARTER, DateValue),
-    MONTH(DateValue),
-    DATENAME(MONTH, DateValue),
-    DATEPART(ISO_WEEK, DateValue),
-
-    DAY(DateValue),
-
-    ((DATEPART(WEEKDAY, DateValue) + @@DATEFIRST - 2) % 7) + 1
-        AS DayOfWeek,
-
-    DATENAME(WEEKDAY, DateValue)
-        AS DayName,
-
-    CASE
-        WHEN ((DATEPART(WEEKDAY, DateValue) + @@DATEFIRST - 2) % 7) + 1
-             IN (6, 7)
-        THEN 1
-        ELSE 0
-    END AS IsWeekend
-
-FROM DateSeries
-OPTION (MAXRECURSION 0);
+    COUNT(*) AS TotalRows,
+    MIN([Date]) AS FirstDate,
+    MAX([Date]) AS LastDate
+FROM dwh.DimDate;
+GO
